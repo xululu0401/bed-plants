@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>一畦几棵苗 · 这条畦能种几棵、要几袋种子几棵苗</title>
+<meta name="description" content="填畦的长宽和边距，再把畦分成几段、每段种什么、行距株距多少、直播还是移栽，算出每段几行几棵、要几粒种子几袋、买几棵苗，画出俯视种植图，并给出只改一项就能多种几棵的改法。">
+<style>
+  :root{
+    --bg:#f1f3ec; --card:#fff; --ink:#1f251c; --ink2:#4f5848; --mut:#7f8876; --line:#dde3d4;
+    --acc:#3f6b2f; --acc2:#e7f0df; --soil:#8a6a4a; --soil2:#b89574; --soil3:#d8c2a5; --no:#b13a2b; --no2:#f8e1dc;
+    --sh:0 1px 2px rgba(31,37,28,.06),0 6px 18px rgba(31,37,28,.06);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font:16px/1.6 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:980px;margin:0 auto;padding:22px 16px 72px}
+  h1{font-size:30px;line-height:1.25;margin:0 0 6px}
+  .sub{color:var(--ink2);margin:0;font-size:15.5px}
+  .muted{color:var(--mut);font-size:13.5px}
+  .hide{display:none !important}
+  button{font:inherit;cursor:pointer}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 4px}
+  .chip{background:#fff;border:1px solid var(--line);border-radius:999px;padding:6px 13px;font-size:13.5px;color:var(--ink2);text-align:left}
+  .chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--sh);padding:16px;margin:14px 0;min-width:0}
+  .card h2{font-size:17px;margin:0 0 10px}
+  .f{min-width:0}
+  .f label{display:block;font-size:12.5px;color:var(--ink2);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .f input,.f select{width:100%;font:15px/1.4 ui-monospace,Menlo,monospace;padding:7px 8px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink);min-width:0}
+  .f select,.f.txt input{font-family:inherit;font-size:14.5px}
+  .f.bad input,.f.bad select{border-color:var(--no);background:#fff4f1}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(130px,100%),1fr));gap:9px}
+  .btn{background:var(--ink);border:1px solid var(--ink);color:#fff;border-radius:9px;padding:7px 12px;font-size:14px}
+  .btn.ghost{background:#fff;color:var(--ink)}
+  .btn.mini{padding:5px 10px;font-size:13px}
+  .bar{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;align-items:center}
+  .box{border-radius:10px;padding:10px 12px;font-size:14.5px;margin:10px 0;overflow-wrap:anywhere}
+  .box.bad{background:var(--no2);color:#6b2416;border:1px solid #f0c7bd}
+  .box.warn{background:#f7f3e2;color:#5a4b14;border:1px solid #e6dcb2}
+  .box ul{margin:4px 0 0;padding-left:20px}
+
+  /* 沙盘：畦的俯视图 */
+  .bedwrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:12px}
+  .bed{display:block;width:100%;min-width:620px;height:auto}
+  .head{display:flex;flex-wrap:wrap;gap:6px 22px;align-items:baseline;margin:2px 0 10px}
+  .head .big{font-size:38px;font-weight:700;line-height:1.1;color:var(--acc)}
+  .head .big small{font-size:16px;color:var(--ink2);font-weight:400;margin-left:4px}
+  .head .cost{font-size:22px;font-weight:700}
+  .head .how{flex-basis:100%;font-size:14px;color:var(--ink2)}
+  .segs{list-style:none;margin:10px 0 0;padding:0}
+  .segs li{display:grid;grid-template-columns:14px minmax(0,1fr) auto;gap:2px 10px;align-items:baseline;padding:8px 0;border-bottom:1px dotted var(--line);overflow-wrap:anywhere}
+  .segs li:last-child{border-bottom:0}
+  .segs .sw{width:12px;height:12px;border-radius:50%;display:inline-block;transform:translateY(1px)}
+  .segs .nm{font-weight:700}
+  .segs .qty{font:600 15px ui-monospace,Menlo,monospace;white-space:nowrap}
+  .segs .dt{grid-column:2/4;font-size:13.5px;color:var(--ink2)}
+  .acts{display:grid;gap:8px;margin-top:6px}
+  .act{text-align:left;background:var(--acc2);border:1px solid #cbdcbc;color:#2b4a1f;border-radius:10px;padding:9px 12px;font-size:14px;overflow-wrap:anywhere}
+  .act small{display:block;color:var(--mut);font-size:12.5px}
+  #saveTag{font-size:12.5px;color:var(--mut);font-weight:400}
+
+  .crop{border:1px solid var(--line);border-radius:10px;padding:10px;margin:8px 0;display:grid;grid-template-columns:minmax(0,1.3fr) repeat(5,minmax(0,1fr)) auto;gap:8px;align-items:end}
+  .crop .more{grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(130px,100%),1fr));gap:8px}
+  @media (max-width:700px){ .crop{grid-template-columns:repeat(2,minmax(0,1fr))} .crop .f.txt{grid-column:1/-1} }
+  .crop .del{background:#fff;border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:13px;color:var(--no)}
+  .foot{margin-top:18px;font-size:13.5px;color:var(--mut)}
+  .foot li{margin:3px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>一畦几棵苗</h1>
+    <p class="sub">把一条畦分成几段，每段种一样菜：填行距、株距、方格还是三角交错，就画出每一棵种在哪，算出几行几棵、直播要几袋种子、移栽买几棵苗；再告诉你改哪一项能多种几棵，点一下就改进去重算。</p>
+    <div class="chips" id="presets"></div>
+    <p class="muted" id="presetNote"></p>
+  </header>
+
+  <div id="errBox" class="box bad hide"></div>
+
+  <section class="card" id="resCard">
+    <h2>这条畦 <span id="saveTag"></span></h2>
+    <div class="head">
+      <div><div class="muted">一共种</div><div class="big" id="plantsN"></div></div>
+      <div><div class="muted">种子和苗约</div><div class="cost" id="costN"></div></div>
+      <div class="how" id="howN"></div>
+    </div>
+    <div class="bedwrap"><svg class="bed" id="bedSvg" viewBox="0 0 900 300" role="img" aria-label="畦的俯视种植图"></svg></div>
+    <p class="muted" id="bedNote" style="margin:4px 0 0"></p>
+    <ul class="segs" id="segs"></ul>
+    <div id="actsBlock"><h2 style="margin:14px 0 0;font-size:15px">想多种几棵（每条只改一项，点一下就写进下面重算）</h2><div class="acts" id="acts"></div></div>
+    <div id="warnBox" class="box warn hide"></div>
+  </section>
+
+  <section class="card">
+    <h2>畦</h2>
+    <div class="grid" id="form">
+      <div class="f" id="f_L"><label for="L">畦长 cm</label><input id="L" data-k="L" inputmode="decimal"></div>
+      <div class="f" id="f_B"><label for="B">畦宽 cm</label><input id="B" data-k="B" inputmode="decimal"></div>
+      <div class="f" id="f_e"><label for="e">边距 cm</label><input id="e" data-k="e" inputmode="decimal"></div>
+      <div class="f" id="f_eMin"><label for="eMin">边距最少接受 cm</label><input id="eMin" data-k="eMin" inputmode="decimal"></div>
+      <div class="f" id="f_spare"><label for="spare">移栽多备苗 %</label><input id="spare" data-k="spare" inputmode="decimal"></div>
+    </div>
+    <p class="muted">边距是最外一棵离畦边的距离，每一段的两头也各留这么多（两段交界处就是两倍）。「边距最少接受」只用来限制下面的改法，不会往里收得比它更窄。移栽多备苗是买苗时多买的比例，补死苗用。</p>
+  </section>
+
+  <section class="card">
+    <h2>每一段种什么（从畦头往后排）</h2>
+    <div id="crops"></div>
+    <div class="bar"><button type="button" class="btn mini ghost" id="addCrop">＋ 再加一段</button><span class="muted" id="cropCount"></span></div>
+    <p class="muted">行沿着畦的长度方向走：行距是两行之间（横跨畦宽）的距离，株距是同一行里两棵之间的距离。三角交错是双数行错开半个株距，像砌砖一样。直播按「每穴几粒」算种子，可能空着的穴 = 棵数 × (1 − 发芽率)^每穴粒数，只是按发芽率独立估的期望值。</p>
+  </section>
+
+  <section class="card">
+    <div class="bar" style="margin:0">
+      <button type="button" class="btn mini" id="dlCsv">下载 CSV</button>
+      <button type="button" class="btn mini" id="dlMd">下载 MD</button>
+      <button type="button" class="btn mini" id="dlPng">下载种植图 PNG</button>
+      <button type="button" class="btn mini ghost" id="dlJson">备份 JSON</button>
+      <button type="button" class="btn mini ghost" id="impJson">从 JSON 恢复</button>
+      <button type="button" class="btn mini ghost" id="reset">恢复默认</button>
+      <input type="file" id="impFile" accept="application/json,.json" class="hide">
+    </div>
+    <p class="muted" style="margin:8px 0 0">输入会自动存到这台设备的浏览器里，刷新还在；换设备用 JSON 备份。</p>
+  </section>
+
+  <ul class="foot">
+    <li>每段能用的长 = 段长 − 2 × 边距，能用的宽 = 畦宽 − 2 × 边距；行数 = ⌊能用的宽 ÷ 行距⌋ + 1，每行棵数 = ⌊能用的长 ÷ 株距⌋ + 1；三角交错的双数行从半个株距处开始，可能少一棵。</li>
+    <li>直播种子 = 棵数 × 每穴粒数，按每袋粒数向上取整到袋；移栽买苗 = 棵数 × (1 + 多备比例)，向上取整。</li>
+    <li>改三角交错只在行距和株距相差不超过 20% 时给，行距收到「斜对角两棵不近于原来最近两棵」为止；行距明显大于株距多半是留着走人或培土的，不替你收。边距、多备比例和这条 20% 都是本页的设计值。</li>
+    <li>没算的：行株距该取多少（看种子袋和当地经验）、间作套种、株型遮光、畦沟和走道、不规则形状的地、真实发芽率。默认场景是虚构的，结果是估算。</li>
+  </ul>
+</div>
+<script src="./core.js"></script>
+<script src="./ui.js"></script>
+</body>
+</html>
